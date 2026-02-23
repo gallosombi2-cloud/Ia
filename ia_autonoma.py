@@ -3,36 +3,39 @@ import subprocess
 import google.generativeai as genai
 from dotenv import load_dotenv
 
-# Configuración inicial
+# Cargar configuración
 load_dotenv()
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+api_key = os.getenv("GEMINI_API_KEY")
 
-# Usamos gemini-1.5-flash para evitar el error 404 de modelos antiguos
+if not api_key:
+    print("Error: No se encontró la GEMINI_API_KEY en el archivo .env")
+    exit()
+
+genai.configure(api_key=api_key)
+
+# Usamos la versión estable más reciente
 model = genai.GenerativeModel('gemini-1.5-flash')
 
 def ejecutar_en_kali(comando):
     try:
-        print(f"[*] IA ejecutando: {comando}")
+        print(f"[*] Ejecutando en sistema: {comando}")
         resultado = subprocess.check_output(comando, shell=True, stderr=subprocess.STDOUT, text=True)
         return resultado
     except Exception as e:
-        return f"Error en la ejecución: {str(e)}"
+        return f"Error en ejecución: {str(e)}"
 
 if __name__ == "__main__":
-    print("\n--- IA AUTÓNOMA KALI (MODO TEXTO ACTIVO) ---")
+    print("\n--- IA AUTÓNOMA KALI (MODO TEXTO) ---")
     while True:
         try:
-            orden = input("\n¿Qué orden quieres ejecutar en Kali?: ")
+            orden = input("\n¿Qué orden quieres ejecutar?: ")
+            if orden.lower() in ['salir', 'exit']: break
+
+            # Generar respuesta
+            response = model.generate_content(f"Eres un experto en Kali Linux. El usuario quiere: '{orden}'. Responde solo con el comando bash.")
             
-            if orden.lower() in ['salir', 'exit', 'quit']:
-                break
-
-            prompt = f"Eres un experto en Kali Linux. El usuario quiere: '{orden}'. Responde ÚNICAMENTE con el comando de bash necesario."
-            response = model.generate_content(prompt)
-            comando_ia = response.text.strip()
-
-            # Limpiamos el comando de posibles comillas de Markdown
-            comando_ia = comando_ia.replace('```bash', '').replace('```', '').strip()
+            # Limpiar el comando de caracteres extraños
+            comando_ia = response.text.strip().replace('```bash', '').replace('```', '').strip()
 
             print(f"[+] Comando generado: {comando_ia}")
             salida = ejecutar_en_kali(comando_ia)
