@@ -3,43 +3,34 @@ import subprocess
 import google.generativeai as genai
 from dotenv import load_dotenv
 
-# Cargar configuración
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 
 if not api_key:
-    print("Error: No se encontró la GEMINI_API_KEY en el archivo .env")
+    print("[-] Error: No hay clave en el archivo .env")
     exit()
 
 genai.configure(api_key=api_key)
-
-# Usamos la versión estable más reciente
+# Usamos gemini-1.5-flash para máxima compatibilidad
 model = genai.GenerativeModel('gemini-1.5-flash')
 
-def ejecutar_en_kali(comando):
+def ejecutar_comando(cmd):
     try:
-        print(f"[*] Ejecutando en sistema: {comando}")
-        resultado = subprocess.check_output(comando, shell=True, stderr=subprocess.STDOUT, text=True)
-        return resultado
+        print(f"[*] IA ejecutando: {cmd}")
+        return subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, text=True)
     except Exception as e:
-        return f"Error en ejecución: {str(e)}"
+        return f"Error: {str(e)}"
 
 if __name__ == "__main__":
-    print("\n--- IA AUTÓNOMA KALI (MODO TEXTO) ---")
+    print("\n--- IA KALI ONLINE (TEXTO) ---")
     while True:
         try:
-            orden = input("\n¿Qué orden quieres ejecutar?: ")
-            if orden.lower() in ['salir', 'exit']: break
-
-            # Generar respuesta
-            response = model.generate_content(f"Eres un experto en Kali Linux. El usuario quiere: '{orden}'. Responde solo con el comando bash.")
+            orden = input("\nOrden: ")
+            if orden.lower() in ['exit', 'salir']: break
             
-            # Limpiar el comando de caracteres extraños
-            comando_ia = response.text.strip().replace('```bash', '').replace('```', '').strip()
-
-            print(f"[+] Comando generado: {comando_ia}")
-            salida = ejecutar_en_kali(comando_ia)
-            print(f"--- RESULTADO ---\n{salida}")
+            res = model.generate_content(f"Eres experto en Kali Linux. El usuario quiere: {orden}. Responde SOLO el comando bash.")
+            comando = res.text.strip().replace('```bash', '').replace('```', '').strip()
             
+            print(ejecutar_comando(comando))
         except Exception as e:
-            print(f"Hubo un error en el proceso: {e}")
+            print(f"Error en proceso: {e}")
